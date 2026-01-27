@@ -5,6 +5,7 @@ require('dotenv').config();
 console.log('🔍 環境変数の確認:');
 console.log(`   GOOGLE_SHEETS_SPREADSHEET_ID: ${process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '(未設定)'}`);
 console.log(`   GOOGLE_SERVICE_ACCOUNT_PATH: ${process.env.GOOGLE_SERVICE_ACCOUNT_PATH || '(未設定)'}`);
+console.log(`   GOOGLE_SERVICE_ACCOUNT_JSON: ${process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? '(設定済み)' : '(未設定)'}`);
 console.log(`   PORT: ${process.env.PORT || '(未設定、デフォルト3000)'}`);
 console.log('');
 
