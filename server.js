@@ -6,8 +6,28 @@ console.log('🔍 環境変数の確認:');
 console.log(`   GOOGLE_SHEETS_SPREADSHEET_ID: ${process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '(未設定)'}`);
 console.log(`   GOOGLE_SERVICE_ACCOUNT_PATH: ${process.env.GOOGLE_SERVICE_ACCOUNT_PATH || '(未設定)'}`);
 console.log(`   GOOGLE_SERVICE_ACCOUNT_JSON: ${process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? '(設定済み)' : '(未設定)'}`);
+console.log(`   GOOGLE_SERVICE_ACCOUNT_JSON_BASE64: ${process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ? '(設定済み)' : '(未設定)'}`);
 console.log(`   PORT: ${process.env.PORT || '(未設定、デフォルト3000)'}`);
+console.log(`   NODE_ENV: ${process.env.NODE_ENV || '(未設定)'}`);
 console.log('');
+
+// 環境変数の検証
+const missingVars = [];
+if (!process.env.GOOGLE_SHEETS_SPREADSHEET_ID) {
+  missingVars.push('GOOGLE_SHEETS_SPREADSHEET_ID');
+}
+if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 && 
+    !process.env.GOOGLE_SERVICE_ACCOUNT_JSON && 
+    !process.env.GOOGLE_SERVICE_ACCOUNT_PATH) {
+  missingVars.push('GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 または GOOGLE_SERVICE_ACCOUNT_JSON または GOOGLE_SERVICE_ACCOUNT_PATH');
+}
+
+if (missingVars.length > 0) {
+  console.warn('⚠️ 警告: 以下の環境変数が設定されていません:');
+  missingVars.forEach(v => console.warn(`   - ${v}`));
+  console.warn('   サーバーは起動しますが、Google Sheets APIへの接続に失敗する可能性があります。');
+  console.warn('');
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -32,7 +52,10 @@ async function loadFAQData() {
     return { faqs };
   } catch (error) {
     console.error('❌ FAQデータの読み込みエラー:', error);
-    return { faqs: [] };
+    console.error('   エラー詳細:', error.message);
+    console.error('   スタックトレース:', error.stack);
+    // エラーを再スローして、呼び出し元で適切に処理できるようにする
+    throw error;
   }
 }
 
@@ -73,7 +96,14 @@ function calculateSimilarity(text, keywords) {
 
 // FAQ検索（セマンティック検索風）
 async function searchFAQ(query) {
-  const data = await loadFAQData();
+  let data;
+  try {
+    data = await loadFAQData();
+  } catch (error) {
+    console.error('❌ searchFAQ: FAQデータの読み込みに失敗:', error.message);
+    throw new Error(`FAQデータの読み込みに失敗しました: ${error.message}`);
+  }
+  
   const results = [];
   
   console.log(`🔍 検索クエリ: "${query}"`);
@@ -172,22 +202,30 @@ app.post('/api/chat', async (req, res) => {
       answer = bestMatch.answer;
       faqId = bestMatch.id;
       
-      // 使用回数をインクリメント
-      await googleSheets.incrementFAQUsage(faqId);
+      // 使用回数をインクリメント（エラーが発生しても続行）
+      try {
+        await googleSheets.incrementFAQUsage(faqId);
+      } catch (usageError) {
+        console.warn('⚠️ 使用回数のインクリメントに失敗（続行）:', usageError.message);
+      }
     } else {
       // マッチしない場合のデフォルト応答
       answer = 'お問い合わせありがとうございます。申し訳ございませんが、該当する情報が見つかりませんでした。お手数ですが、別の言い方でお試しいただくか、カスタマーサポートまでお問い合わせください。';
       faqId = null;
     }
     
-    // 履歴を保存
-    await googleSheets.addHistory({
-      question: message,
-      answer: answer,
-      faqId: faqId,
-      userId: userId || 'anonymous',
-      sessionId: sessionId || generateSessionId(),
-    });
+    // 履歴を保存（エラーが発生しても続行）
+    try {
+      await googleSheets.addHistory({
+        question: message,
+        answer: answer,
+        faqId: faqId,
+        userId: userId || 'anonymous',
+        sessionId: sessionId || generateSessionId(),
+      });
+    } catch (historyError) {
+      console.warn('⚠️ 履歴の保存に失敗（続行）:', historyError.message);
+    }
     
     res.json({
       answer: answer,
@@ -195,7 +233,20 @@ app.post('/api/chat', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ チャットAPIエラー:', error);
-    res.status(500).json({ error: 'サーバーエラーが発生しました' });
+    console.error('   エラー詳細:', error.message);
+    console.error('   スタックトレース:', error.stack);
+    
+    // エラーの種類に応じて適切なメッセージを返す
+    let errorMessage = 'サーバーエラーが発生しました';
+    if (error.message.includes('初期化')) {
+      errorMessage = 'Google Sheets APIの初期化に失敗しました。環境変数の設定を確認してください。';
+    } else if (error.message.includes('認証')) {
+      errorMessage = '認証エラーが発生しました。認証情報を確認してください。';
+    } else if (error.message.includes('スプレッドシート')) {
+      errorMessage = 'スプレッドシートへのアクセスに失敗しました。';
+    }
+    
+    res.status(500).json({ error: errorMessage });
   }
 });
 

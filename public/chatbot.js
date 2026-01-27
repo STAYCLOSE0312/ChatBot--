@@ -1,4 +1,12 @@
-const API_URL = 'http://localhost:3000/api';
+// API URLを環境に応じて自動設定
+const API_URL = (() => {
+  // 本番環境（Renderなど）では、同じドメインを使用
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `${window.location.origin}/api`;
+  }
+  // ローカル開発環境
+  return 'http://localhost:3000/api';
+})();
 
 let chatMessages = [];
 
@@ -28,11 +36,24 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadPopularQuestions() {
     try {
         const response = await fetch(`${API_URL}/faqs/popular`);
+        
+        if (!response.ok) {
+            console.error('FAQ取得エラー:', response.status);
+            return;
+        }
+        
         const faqs = await response.json();
+        
+        if (!Array.isArray(faqs) || faqs.length === 0) {
+            console.warn('FAQデータが空です');
+            return;
+        }
         
         quickQuestionsButtons.innerHTML = '';
         
         faqs.slice(0, 4).forEach(faq => {
+            if (!faq || !faq.question) return;
+            
             const button = document.createElement('button');
             button.className = 'quick-question-btn';
             button.textContent = faq.question;
@@ -69,10 +90,25 @@ async function sendMessage() {
             body: JSON.stringify({ message })
         });
         
-        const data = await response.json();
-        
         // タイピングインジケーターを削除
         removeTypingIndicator(typingId);
+        
+        // レスポンスのステータスを確認
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'サーバーエラーが発生しました' }));
+            console.error('APIエラー:', response.status, errorData);
+            addBotMessage(`申し訳ございません。エラーが発生しました。(${response.status}: ${errorData.error || '不明なエラー'})`);
+            return;
+        }
+        
+        const data = await response.json();
+        
+        // データの検証
+        if (!data || !data.answer) {
+            console.error('無効なレスポンスデータ:', data);
+            addBotMessage('申し訳ございません。サーバーからの応答が不正です。');
+            return;
+        }
         
         // ボットの回答を表示
         addBotMessage(data.answer, data.relatedQuestions || []);
@@ -80,7 +116,7 @@ async function sendMessage() {
     } catch (error) {
         console.error('メッセージ送信エラー:', error);
         removeTypingIndicator(typingId);
-        addBotMessage('申し訳ございません。エラーが発生しました。もう一度お試しください。');
+        addBotMessage(`申し訳ございません。エラーが発生しました。(${error.message || 'ネットワークエラー'})`);
     }
 }
 
