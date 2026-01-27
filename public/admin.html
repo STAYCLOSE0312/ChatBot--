@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ管理画面</title>
+    <link rel="stylesheet" href="admin.css?v=3.0">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>📝 FAQ管理画面</h1>
+            <a href="chatbot.html" class="chatbot-link" target="_blank">💬 チャットボットを開く</a>
+        </div>
+
+        <!-- 画面トップの操作ボタンエリア -->
+        <div class="admin-toolbar">
+            <button class="btn btn-secondary toolbar-btn" id="toolbarHistoryButton">お問い合わせ履歴</button>
+            <button class="btn btn-secondary toolbar-btn" id="toolbarFaqButton">FAQ一覧</button>
+            <button class="btn btn-secondary toolbar-btn" id="toolbarCsvButton">CSV取り込み</button>
+        </div>
+
+        <div class="admin-content">
+            <div class="add-section">
+                <h2>新しいFAQを追加</h2>
+                <form id="addFaqForm">
+                    <div class="form-group">
+                        <label for="newQuestion">質問 <span class="required">*</span></label>
+                        <input 
+                            type="text" 
+                            id="newQuestion" 
+                            placeholder="例: 営業時間を教えてください"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newAnswer">回答 <span class="required">*</span></label>
+                        <textarea 
+                            id="newAnswer" 
+                            rows="4"
+                            placeholder="例: 営業時間は平日9:00〜18:00です。"
+                            required
+                        ></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newKeywords">キーワード（カンマ区切り）</label>
+                        <input 
+                            type="text" 
+                            id="newKeywords" 
+                            placeholder="例: 営業時間, 何時, 時間"
+                        >
+                        <small>検索精度を上げるためのキーワードを入力してください</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">追加</button>
+                </form>
+
+                <div class="popular-section">
+                    <h3>よくある質問を設定</h3>
+                    <p class="popular-description">
+                        チャット画面の最初に表示される「よくあるご質問」を最大4件まで選択できます。
+                    </p>
+                    <div id="popularSettings" class="popular-settings">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                    <button type="button" class="btn btn-primary popular-save-btn" id="savePopularButton">よくある質問を保存</button>
+                </div>
+            </div>
+
+            <div class="list-section">
+                <h2 id="listSectionTitle">FAQ一覧</h2>
+
+                <!-- お問い合わせ履歴ビュー -->
+                <div id="contactHistoryView" class="contact-history-view hidden">
+                    <p class="history-description">
+                        過去のお問い合わせ内容を確認できます。（デモ用のサンプルデータです）
+                    </p>
+                    <div class="contact-history-list" id="contactHistoryList">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                </div>
+
+                <!-- FAQ一覧ビュー -->
+                <div id="faqListView">
+                    <div class="faq-count">
+                        登録件数: <span id="faqCount">0</span>件
+                    </div>
+                    <div id="faqList" class="faq-list">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                </div>
+
+                <!-- CSV取り込みビュー -->
+                <div id="csvImportView" class="csv-import-view hidden">
+                    <p class="csv-description">
+                        CSVファイルを選択し、「アップロード」ボタンを押すと、現在のFAQ一覧が
+                        <strong>CSVの内容で上書き</strong>されます。<br>
+                        フォーマット：A列=No（任意）、B列=質問、C列=回答、D列=キーワード（カンマ区切り）
+                    </p>
+                    <div class="csv-form">
+                        <input type="file" id="csvFileInput" accept=".csv" />
+                        <button type="button" class="btn btn-primary" id="csvUploadButton">アップロード</button>
+                    </div>
+                    <div id="csvUploadResult" class="csv-upload-result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編集モーダル -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>FAQを編集</h2>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editFaqForm">
+                <input type="hidden" id="editId">
+                
+                <div class="form-group">
+                    <label for="editQuestion">質問 <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="editQuestion" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="editAnswer">回答 <span class="required">*</span></label>
+                    <textarea 
+                        id="editAnswer" 
+                        rows="4"
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="editKeywords">キーワード（カンマ区切り）</label>
+                    <input 
+                        type="text" 
+                        id="editKeywords"
+                    >
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- お問い合わせ履歴モーダル -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content history-modal">
+            <div class="modal-header">
+                <h2 id="historyModalTitle">お問い合わせ詳細</h2>
+                <button class="close-btn" onclick="closeHistoryModal()">&times;</button>
+            </div>
+            <div id="historyModalBody" class="history-modal-body">
+                <!-- JavaScriptで動的に生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
+

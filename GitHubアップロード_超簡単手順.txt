@@ -1,0 +1,46 @@
+===========================================
+GitHubにコードをアップロードする方法（超簡単）
+===========================================
+
+【準備】
+1. GitHubアカウントを作成（まだの場合）
+   → https://github.com にアクセス
+   → 「Sign up」をクリックしてアカウント作成
+
+2. GitHubでリポジトリを作成
+   → GitHubにログイン
+   → 右上の「+」→「New repository」
+   → リポジトリ名を入力（例: faq-chatbot）
+   → 「Public」にチェック
+   → 「Create repository」をクリック
+
+【VS Codeでアップロード】
+VS Codeのターミナル（下部）で、以下のコマンドを順番に実行：
+
+1. git init
+   → Gitを初期化
+
+2. git add .
+   → ファイルを追加
+
+3. git commit -m "初回アップロード"
+   → コミット（保存）
+
+4. git remote add origin https://github.com/YOUR_USERNAME/faq-chatbot.git
+   → ⚠️ YOUR_USERNAME をあなたのGitHubユーザー名に置き換えてください！
+   → 例: ユーザー名が「tanaka」の場合
+      git remote add origin https://github.com/tanaka/faq-chatbot.git
+
+5. git branch -M main
+   → ブランチ名をmainに変更
+
+6. git push -u origin main
+   → GitHubにアップロード
+   → ユーザー名とパスワードを聞かれたら入力
+
+【確認】
+GitHubのページをリフレッシュすると、ファイルが表示されます！
+
+【注意】
+- .envファイルとcredentialsフォルダは自動的に除外されます（安全）
+- エラーが出た場合は、ユーザー名とリポジトリ名が正しいか確認してください

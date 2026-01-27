@@ -1,0 +1,597 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'メイリオ', Meiryo, sans-serif;
+    background: #f5f5f5;
+    padding: 20px;
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-toolbar {
+    background: white;
+    padding: 15px 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 12px;
+}
+
+.toolbar-btn {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+}
+
+.toolbar-btn.active {
+    background: #667eea;
+    color: #fff;
+}
+
+.admin-header {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-header h1 {
+    font-size: 28px;
+    color: #333;
+}
+
+.chatbot-link {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: transform 0.2s;
+}
+
+.chatbot-link:hover {
+    transform: scale(1.05);
+}
+
+.admin-content {
+    display: grid !important;
+    grid-template-columns: 3fr 7fr !important;
+    gap: 20px !important;
+    width: 100% !important;
+}
+
+/* すべてのメディアクエリから admin-content を除外 */
+@media (max-width: 768px) {
+    .admin-content {
+        grid-template-columns: 3fr 7fr !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .admin-content {
+        grid-template-columns: 3fr 7fr !important;
+    }
+}
+
+@media (max-width: 968px) {
+    .admin-content {
+        grid-template-columns: 3fr 7fr !important;
+    }
+}
+
+.add-section,
+.list-section {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 0;
+}
+
+.add-section h2,
+.list-section h2 {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #667eea;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #d0d0d0;
+}
+
+.btn-edit {
+    background: #3498db;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.faq-count {
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+.faq-count span {
+    font-weight: bold;
+    color: #667eea;
+}
+
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.csv-import-view {
+    margin-top: 10px;
+}
+
+.csv-description {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.csv-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.csv-upload-result {
+    font-size: 13px;
+    color: #666;
+}
+
+.hidden {
+    display: none;
+}
+
+.popular-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.popular-section h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.popular-description {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.popular-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.popular-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    width: 100%;
+}
+
+.popular-row-label {
+    width: 18px;
+    min-width: 18px;
+    font-size: 13px;
+    color: #555;
+    flex-shrink: 0;
+}
+
+.popular-select {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popular-save-btn {
+    margin-top: 4px;
+}
+
+.contact-history-view {
+    margin-bottom: 20px;
+}
+
+.history-description {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.contact-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contact-history-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 15px;
+    background: #fafafa;
+}
+
+.contact-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.contact-history-name {
+    font-weight: 600;
+}
+
+.contact-history-date {
+    font-size: 12px;
+    color: #888;
+}
+
+.contact-history-message {
+    margin-bottom: 10px;
+    color: #555;
+    line-height: 1.5;
+}
+
+.contact-history-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.history-tag {
+    padding: 4px 8px;
+    border-radius: 12px;
+    background: #eef2ff;
+    color: #4a5fc1;
+    font-size: 12px;
+}
+
+.history-detail-btn {
+    margin-top: 12px;
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.history-modal {
+    max-width: 720px;
+}
+
+.history-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.history-info {
+    padding: 12px;
+    background: #f7f7ff;
+    border-radius: 8px;
+    border: 1px solid #e0e0f5;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.history-info strong {
+    margin-right: 6px;
+}
+
+.history-conversation {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    background: #fff;
+}
+
+.history-message {
+    margin-bottom: 15px;
+}
+
+.history-message .message-meta {
+    font-size: 12px;
+    color: #999;
+    margin-bottom: 4px;
+}
+
+.history-message .message-bubble {
+    display: inline-block;
+    padding: 10px 14px;
+    border-radius: 12px;
+    line-height: 1.5;
+}
+
+.history-message.user .message-bubble {
+    background: #fff4e6;
+    color: #a35507;
+}
+
+.history-message.bot .message-bubble {
+    background: #eef2ff;
+    color: #1d2a75;
+}
+
+.faq-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: box-shadow 0.2s;
+}
+
+.faq-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.faq-question {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.faq-answer {
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.faq-keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.keyword-tag {
+    padding: 4px 10px;
+    background: #f0f0f0;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #666;
+}
+
+.faq-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+/* モーダル */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #667eea;
+}
+
+.modal-header h2 {
+    font-size: 20px;
+    color: #333;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #333;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* レスポンシブ対応 - 通常のデスクトップでは常に3:7を維持 */
+/* admin-contentのレイアウトは常に3:7を維持（メディアクエリで変更しない） */
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .add-section,
+    .list-section {
+        padding: 20px;
+    }
+}
+
+/* メッセージ通知 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 5px;
+    color: white;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease-out;
+    z-index: 2000;
+}
+
+.notification.success {
+    background: #27ae60;
+}
+
+.notification.error {
+    background: #e74c3c;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+

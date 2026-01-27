@@ -1,0 +1,61 @@
+============================================
+GitHubアップロード 簡単手順
+============================================
+
+【重要】まずGitが認識されるか確認
+
+Step 1: ターミナルを再起動
+   - VS Codeのターミナルを閉じる（×ボタン）
+   - 新しいターミナルを開く（Ctrl + @）
+
+Step 2: Git確認
+   git --version
+
+   成功例: git version 2.42.0.windows.1
+   エラー: → Gitのインストールが必要
+
+============================================
+【Gitが認識されたら、以下を順番に実行】
+
+Step 3: フォルダに移動（念のため）
+   cd "G:\マイドライブ\Cursor\ChatBot制作"
+
+Step 4: Git初期化
+   git init
+
+Step 5: Git設定（一度だけ）
+   git config --global user.name "あなたの名前"
+   git config --global user.email "your-email@example.com"
+
+Step 6: ファイル追加
+   git add .
+
+Step 7: コミット
+   git commit -m "初回アップロード"
+
+Step 8: リモート接続
+   git remote add origin https://github.com/STAYCLOSES/faq-chatbot.git
+
+Step 9: ブランチ名変更
+   git branch -M main
+
+Step 10: アップロード
+   git push -u origin main
+
+   ※ Personal Access Token が必要です
+   ※ パスワードではなく、トークンを入力
+
+============================================
+【エラーが出た場合】
+
+「git が認識されません」
+→ ターミナルを完全に閉じて再起動
+→ それでもダメなら、Gitを再インストール
+
+「remote origin already exists」
+→ 既に接続済み。Step 10（push）に進む
+
+「Authentication failed」
+→ Personal Access Token を再作成
+
+============================================
