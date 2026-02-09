@@ -1,8 +1,18 @@
-// API設定: Netlify では Functions、localhost:3000 は従来の Node API、それ以外は APPS_SCRIPT_URL または /api
+// API設定: APPS_SCRIPT_URL が設定されていればスプシ直連。未設定なら Netlify Functions または Node API
 const API_CONFIG = (() => {
   const origin = window.location.origin;
   const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
   const isNodeServer = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && port === '3000';
+  if (window.APPS_SCRIPT_URL) {
+    const base = String(window.APPS_SCRIPT_URL).replace(/\?.*$/, '').trim();
+    if (base) {
+      return {
+        popular: base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=popular',
+        chat: base,
+        method: 'direct'
+      };
+    }
+  }
   if (isNodeServer) {
     return {
       popular: `${origin}/api/faqs/popular`,
@@ -15,14 +25,6 @@ const API_CONFIG = (() => {
       popular: `${origin}/.netlify/functions/popular`,
       chat: `${origin}/.netlify/functions/chat`,
       method: 'netlify'
-    };
-  }
-  if (window.APPS_SCRIPT_URL) {
-    const base = window.APPS_SCRIPT_URL.replace(/\?.*$/, '');
-    return {
-      popular: base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=popular',
-      chat: base,
-      method: 'direct'
     };
   }
   return {
@@ -92,6 +94,17 @@ async function loadPopularQuestions() {
     }
 }
 
+// 同一顧客判定用ID（localStorage。同じブラウザ＝同じ顧客としてやり取り回数を集計）
+function getCustomerId() {
+    const key = 'chatbot_customer_id';
+    let id = localStorage.getItem(key);
+    if (!id) {
+        id = 'cust_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+        localStorage.setItem(key, id);
+    }
+    return id;
+}
+
 // メッセージ送信
 async function sendMessage() {
     const message = chatInput.value.trim();
@@ -111,7 +124,7 @@ async function sendMessage() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ message, customerId: getCustomerId() })
         });
         
         // タイピングインジケーターを削除
@@ -182,7 +195,7 @@ function addBotMessage(text, relatedQuestions = []) {
             <img src="images/rimonyan.png" alt="リモにゃん">
         </div>
         <div class="message-content">
-            <p>${escapeHtml(text).replace(/\n/g, '<br>')}</p>
+            <p>${formatMessageText(text)}</p>
             ${relatedHTML}
         </div>
     `;
@@ -239,5 +252,17 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// 回答文を表示用に整形（改行→br、URL→リンク）
+function formatMessageText(text) {
+    const escaped = escapeHtml(text);
+    const withBr = escaped.replace(/\n/g, '<br>');
+    const withLinks = withBr.replace(/(https?:\/\/[^\s<>"']+)/g, (url) => {
+        const trimmed = url.replace(/[.,。、,!?)、）】\s]+$/, '').replace(/[^\x00-\x7F]+$/, '');
+        const suffix = url.slice(trimmed.length);
+        return '<a href="' + trimmed + '" target="_blank" rel="noopener noreferrer">' + trimmed + '</a>' + suffix;
+    });
+    return withLinks;
 }
 

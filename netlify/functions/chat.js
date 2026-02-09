@@ -32,7 +32,10 @@ exports.handler = async (event, context) => {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: body.message || '' })
+      body: JSON.stringify({
+        message: body.message || '',
+        customerId: body.customerId || ''
+      })
     });
     const text = await res.text();
     const statusCode = res.ok ? 200 : res.status;

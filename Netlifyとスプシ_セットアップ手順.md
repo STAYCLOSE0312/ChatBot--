@@ -5,6 +5,20 @@ AI を使わず、**FAQ ＋ キーワード検索**で回答するチャット�
 
 ---
 
+## 手順の流れ（この順番で進める）
+
+| 順番 | やること | どこでやる |
+|------|----------|------------|
+| 1 | スプレッドシートで「FAQ」シートを用意する | Google スプレッドシート |
+| 2 | Apps Script を貼り付けて「ウェブアプリ」でデプロイし、URL をコピー | スプシ → 拡張機能 → Apps Script |
+| 3 | このプロジェクトを GitHub にプッシュする（済んでいれば不要） | Cursor のターミナル（`GitHubに接続する手順.md` 参照） |
+| 4 | Netlify で GitHub リポジトリを選んでデプロイする | Netlify のサイト |
+| 5 | Netlify に環境変数 `APPS_SCRIPT_URL` を入れ、再デプロイする | Netlify → Site configuration → Environment variables |
+
+以下は、上記の **1 → 2** と **4 → 5** の詳細手順です。
+
+---
+
 ## 用意するもの（事前にそろえるもの）
 
 - **Googleスプレッドシート** … シート名「FAQ」、列：ID・質問・回答・キーワード など（下記 1 参照）
@@ -71,25 +85,120 @@ AI を使わず、**FAQ ＋ キーワード検索**で回答するチャット�
 
 ## 3. Netlify でのデプロイ
 
-### 3.1 リポジトリを Netlify に接続
+### 3.1 Netlify にログインする
 
-1. [Netlify](https://app.netlify.com/) にログイン。
-2. **「Add new site」** → **「Import an existing project」**。
-3. GitHub 等でこのプロジェクトを選び、リポジトリを接続。
-4. ビルド設定は次のとおりでOKです（`netlify.toml` で指定済み）:
-   - **Build command**: 空欄でOK（静的サイト＋Functions）
-   - **Publish directory**: `public`
-   - **Functions directory**: `netlify/functions`（Netlify が自動検出）
+1. ブラウザで [https://app.netlify.com/](https://app.netlify.com/) を開く。
+2. まだアカウントがない場合は **Sign up** でメールアドレスか GitHub で登録。  
+   すでにアカウントがある場合は **Log in** でログインする。
 
-### 3.2 環境変数の設定
+---
 
-1. **Site configuration** → **Environment variables**。
-2. **Add a variable** で次を追加:
-   - **Key**: `APPS_SCRIPT_URL`
-   - **Value**: 手順 2.2 でコピーした **ウェブアプリの URL**（`https://script.google.com/macros/s/.../exec` の形式）
-3. **Save** 後、必要なら **「Trigger deploy」** で再デプロイ。
+### 3.2 GitHub のリポジトリを Netlify に接続する
+
+1. Netlify の画面で **「Add new site」**（または **「Sites」** 一覧の **「Add new site」**）をクリック。
+2. **「Import an existing project」** をクリック。
+3. **「Deploy with GitHub」** の **「Connect to GitHub」** をクリック。
+4. GitHub の認証画面が出たら、**Authorize Netlify** などで Netlify に GitHub アクセスを許可する。
+5. **「Install」** や **「Configure Netlify on GitHub」** が出たら、このプロジェクトのリポジトリ（または「All repositories」）を選んで **Install**。
+6. 戻ると **「Pick a repository」** の一覧が出る。  
+   **プッシュしたチャットボットのリポジトリ名**（例: `chatbot-project`）を選んでクリック。
+
+---
+
+### 3.3 ビルド設定を入力する
+
+次のように入力・選択する。
+
+| 項目 | 入力する内容 |
+|------|----------------|
+| **Branch to deploy** | `main` のまま（変更しなくてOK） |
+| **Build command** | **空欄のまま**（何も入力しない） |
+| **Publish directory** | **`public`** と入力（必ず小文字） |
+
+- **Functions directory** は `netlify/functions` と表示されていればそのままでOK（表示されていなくても、このプロジェクトには `netlify.toml` で指定済みなので大丈夫です）。
+7. **「Deploy site」** または **「Deploy 〇〇」** をクリックする。
+8. 数十秒待つと **「Site is live」** のような表示になり、**サイトのURL**（例: `https://xxxx.netlify.app`）が表示される。  
+   この段階ではまだチャットが動かない場合があります（環境変数をまだ入れていないため）。次で設定する。
+
+---
+
+### 3.4 環境変数（APPS_SCRIPT_URL）を設定する
+
+1. デプロイが終わったサイトの管理画面で、上部メニューから **「Site configuration」**（または **「Site settings」**）をクリック。
+2. 左のメニューから **「Environment variables」** をクリック。
+3. **「Add a variable」** または **「Add environment variable」** → **「Add single variable」** をクリック。
+4. 次のように入力する。
+   - **Key**（キー）: `APPS_SCRIPT_URL`
+   - **Value**（値）: 手順 **2.2** でコピーした **Google Apps Script のウェブアプリのURL**  
+     （`https://script.google.com/macros/s/xxxxxxxxxx/exec` のような形式）
+5. **「Create」** または **「Save」** をクリック。
+6. 環境変数を追加したら、**「Trigger deploy」** → **「Deploy site」** で **再デプロイ** する（これで新しい環境変数が反映される）。
 
 これで、Netlify のチャットボットがスプシの FAQ を参照するようになります。
+
+---
+
+## 3.5 手動デプロイで「Failed to fetch」が出る場合（推奨：Git と連携する）
+
+**「Failed to fetch」** は、ブラウザが Netlify（別ドメイン）から **Google Apps Script のURLを直接呼ぶ** と、セキュリティ（CORS）でブロックされるために起こります。手動デプロイ＋config.js のままでは解消できません。
+
+**確実な対処**：いまのサイト（endearing-llama-f34c6e など）に **GitHub リポジトリをリンク** し、**Netlify Functions 経由**で Apps Script を呼ぶようにします。
+
+1. Netlify で **該当サイト** を開く → **Site configuration**（または **Site settings**）。
+2. 左の **「Build & deploy」** → **「Link repository」**（または **「Link site to Git」**）をクリック。
+3. **GitHub** を選び、**チャットボットのリポジトリ**（例: -chatbot-project20260209）を選んでリンクする。
+4. **Build settings** で次を設定する。
+   - **Branch to deploy**: `main`（ここで選べる場合がある）
+   - **Publish directory**: `public`
+   - **Build command**: 空欄
+5. **Environment variables** で **`APPS_SCRIPT_URL`** を追加する。  
+   **Value** に、Apps Script のウェブアプリのURL（`https://script.google.com/macros/s/.../exec`）を入れる。
+6. **「Trigger deploy」** → **「Deploy site」** で再デプロイする。
+
+これで、ブラウザは **同じ Netlify の Functions** だけを呼び、Functions がサーバー側で Apps Script を呼ぶため CORS でブロックされず、スプシと連動します。
+
+---
+
+## 3.6 ブランチが選べないとき：Netlify CLI でデプロイする
+
+Netlify の画面で「デプロイするブランチ」に main が表示されず選べない場合は、**Netlify CLI** でパソコンから直接デプロイするとブランチ選択を省略できます。
+
+### 前提
+
+- いまのサイト（例: endearing-llama-f34c6e）はそのまま使う。
+- 環境変数 **APPS_SCRIPT_URL** は Netlify の画面で設定済みとする。
+
+### 手順
+
+1. **Node.js** が入っていることを確認する（`node -v` でバージョンが表示されればOK）。
+2. **ターミナル（PowerShell や CMD）** を開く。
+3. 次のコマンドで Netlify CLI を入れる（1回だけ）。
+   ```bash
+   npm install -g netlify-cli
+   ```
+4. ログインする。
+   ```bash
+   netlify login
+   ```
+   ブラウザが開くので、Netlify にログインして「Authorize」する。
+5. **チャットボットのプロジェクトのフォルダ**（`netlify.toml` があるフォルダ）に移動する。
+   ```bash
+   cd "C:\Users\User\Documents\ChatBot制作"
+   ```
+6. 既存のサイトと接続する。
+   ```bash
+   netlify link
+   ```
+   - 「What would you like to do?」→ **「Link to current site」** を選ぶ。
+   - 一覧から **endearing-llama-f34c6e** を選ぶ。
+7. 本番デプロイする。
+   ```bash
+   netlify deploy --prod
+   ```
+   - Publish directory を聞かれたら **`public`** と入力する（または Enter で netlify.toml の設定を使う）。
+8. 完了すると「Website is live at ...」と表示される。その URL でチャットがスプシと連動しているか確認する。
+
+以降、コードを直したあとは同じフォルダで `netlify deploy --prod` を実行すれば再デプロイできます。
 
 ---
 
@@ -108,6 +217,56 @@ AI を使わず、**FAQ ＋ キーワード検索**で回答するチャット�
 
 ---
 
+## 5.5 回答の経路とルール・改善方法
+
+### 回答が決まる経路
+
+1. ユーザーが質問を送信  
+2. Netlify（チャット画面）→ Netlify Functions（`chat`）→ **Google Apps Script** のウェブアプリ（POST）  
+3. Apps Script の **searchFAQ(質問文)** が実行される  
+4. **FAQ シート**の各行について「質問文」と「キーワード」で**スコア**を計算  
+5. スコアが**一定以上**のうち、**一番高い行の「回答」**を返す（関連質問は2〜4位）
+
+### スコアのルール（Code.gs の searchFAQ）
+
+| 条件 | スコア |
+|------|--------|
+| 質問文が完全一致 | +100 |
+| ユーザーの質問が FAQ の質問に含まれる / その逆 | +50 ずつ |
+| ユーザーの質問に FAQ の**キーワード**が含まれる | 1語あたり +20 |
+| FAQ の質問にそのキーワードが含まれる | 1語あたり +10 |
+| ユーザーの質問の単語が**回答文**に含まれる | 1語あたり +5（※スペース区切りのため日本語では効きにくい） |
+
+- スコアが **0 より大きい**行だけが候補になる。  
+- **一番スコアが高い行**の回答が返る。  
+- **改善**: スコアが **50 未満**の「一番マッチ」は採用せず、「該当する情報が見つかりませんでした」と返すようにしてある（弱いマッチで別の回答が出るのを防ぐ）。
+
+### なぜ「相談する場所」で「変更手続き」の回答が出たか
+
+- 「相談」という語が、**変更手続き・事務局LINE** の FAQ のキーワードや本文に入っていると、その行にスコアが入る。  
+- 他に「相談する場所」専用の FAQ がなければ、その行が 1 位になり、違う回答が返る。
+
+### 改善方法
+
+1. **FAQ シートを整える（いちばん効く）**  
+   - 「勉強に疲れた・相談する場所」用の**行を 1 行追加**する。  
+   - **質問**: 例）「勉強に疲れました。相談する場所はありますか？」  
+   - **回答**: 相談窓口の案内（例：LINE、窓口URLなど）。  
+   - **キーワード**: 例）`相談, 相談する場所, 心の相談, カウンセリング, 疲れた`  
+   - これで「相談する場所」と聞かれたときに、この行が優先されやすくなる。
+
+2. **キーワードの重なりを減らす**  
+   - 「相談」を、相談窓口の FAQ 用に使い、**変更手続きの FAQ からは「相談」を外す**（または「手続きの相談」だけにする）と、誤って変更手続きの回答が出にくくなる。
+
+3. **スコアのしきい値（MIN_SCORE）**  
+   - Apps Script 側で、スコア **50 未満**のベストマッチは「見つかりません」にしている。  
+   - 必要なら **Code.gs** の `MIN_SCORE` を 60 などに上げると、より厳しくなる（合わない回答は出にくいが、「見つかりません」は増える）。
+
+4. **それでも足りないとき**  
+   - 「近い回答が返せない」質問だけ、後から **AI（ChatGPT）** を組み合わせる方法もある。
+
+---
+
 ## 6. FAQ・キーワードを整えるコツ
 
 - **質問列**: 実際にユーザーが入れそうな言い回しを複数行で登録してもよいです（同じ回答で）。
@@ -120,8 +279,10 @@ AI を使わず、**FAQ ＋ キーワード検索**で回答するチャット�
 
 | 現象 | 確認すること |
 |------|----------------|
-| よくある質問が表示されない | スプシに「FAQ」シートがあり、2行目以降にデータがあるか。Apps Script の URL が Netlify の `APPS_SCRIPT_URL` と一致しているか。 |
-| 送信しても回答が返ってこない | ブラウザの開発者ツール（F12）の「ネットワーク」で、`/.netlify/functions/chat` が 200 で返っているか。Body に `answer` が含まれているか。 |
-| 「APPS_SCRIPT_URL が設定されていません」 | Netlify の環境変数に `APPS_SCRIPT_URL` を追加し、再デプロイしたか。 |
+| 404 や「サーバーエラー」が出る | **Git デプロイ**にして Netlify の環境変数 `APPS_SCRIPT_URL` を設定し、再デプロイする。 |
+| 「Failed to fetch」が出る | ブラウザから Apps Script を直接呼ぶと CORS でブロックされる。**Site configuration → Build & deploy → Link repository** で GitHub をリンクし、環境変数 `APPS_SCRIPT_URL` を設定して再デプロイする（3.5 参照）。 |
+| よくある質問が表示されない | スプシに「FAQ」シートがあり、2行目以降にデータがあるか。Apps Script の URL が `config.js`（手動デプロイ）または Netlify の `APPS_SCRIPT_URL`（Git デプロイ）と一致しているか。 |
+| 送信しても回答が返ってこない | ブラウザの開発者ツール（F12）の「ネットワーク」で、呼び出しているAPIが 200 で返っているか。Body に `answer` が含まれているか。 |
+| 「APPS_SCRIPT_URL が設定されていません」 | Netlify の環境変数に `APPS_SCRIPT_URL` を追加し、再デプロイしたか。手動デプロイの場合は `config.js` にURLを入れたか。 |
 
 以上で、Netlify ＋ スプシ ＋ Apps Script のみの FAQ チャットボットの構築は完了です。

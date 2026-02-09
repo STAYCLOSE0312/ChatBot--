@@ -7,6 +7,8 @@
 var SHEET_NAME = 'FAQ';
 var HISTORY_SHEET_NAME = '対応履歴';
 var HEADER_ROW = 1;
+/** このスコア未満の「一番マッチ」は採用せず「見つかりません」と返す（誤マッチ防止） */
+var MIN_SCORE = 50;
 
 /**
  * GET: 人気FAQ取得（よくある質問ボタン用）
@@ -34,14 +36,15 @@ function doGet(e) {
 
 /**
  * POST: チャット検索
- * Body: {"message": "ユーザーの質問文"}
+ * Body: {"message": "ユーザーの質問文", "customerId": "匿名顧客ID（任意）"}
  * 戻り: {"answer": "回答", "relatedQuestions": ["質問1", "質問2", ...]}
  */
 function doPost(e) {
-  var message;
+  var message, customerId;
   try {
     var body = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
     message = body.message || '';
+    customerId = body.customerId || '';
   } catch (parseErr) {
     return createJsonResponse({ error: 'リクエスト形式が不正です' }, 400);
   }
@@ -55,16 +58,16 @@ function doPost(e) {
     var answer;
     var relatedQuestions = [];
     
-    if (results.length > 0) {
+    if (results.length > 0 && results[0].score >= MIN_SCORE) {
       answer = results[0].answer;
       relatedQuestions = results.slice(1, 4).map(function(r) { return r.question; });
     } else {
-      answer = 'お問い合わせありがとうございます。申し訳ございませんが、該当する情報が見つかりませんでした。お手数ですが、別の言い方でお試しいただくか、カスタマーサポートまでお問い合わせください。';
+      answer = 'お問い合わせいただき、誠にありがとうございます。\n恐れ入りますが、該当する情報を確認することができませんでした。お手数をおかけいたしますが、カスタマーサポートまでお問い合わせください。';
     }
     
     // 対応履歴をスプシに追記（失敗しても回答は返す）
     try {
-      appendHistory(message, answer);
+      appendHistory(message, answer, String(customerId).trim());
     } catch (historyErr) {}
     
     return createJsonResponse({
@@ -164,19 +167,36 @@ function searchFAQ(query) {
 }
 
 /**
- * 対応履歴シートに 日時・質問・回答 を1行追加
- * シートがなければ自動作成する
+ * 対応履歴シートに 日時・質問・回答・やり取り回数・顧客ID を1行追加
+ * シートがなければ自動作成。顧客IDが空の場合は回数は空欄、顧客IDのみ記録しない。
  */
-function appendHistory(question, answer) {
+function appendHistory(question, answer, customerId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(HISTORY_SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(HISTORY_SHEET_NAME);
-    sheet.getRange(1, 1, 1, 3).setValues([['日時', '質問', '回答']]);
-    sheet.getRange(1, 1, 1, 3).setFontWeight('bold');
+    sheet.getRange(1, 1, 1, 5).setValues([['日時', '質問', '回答', 'やり取り回数', '顧客ID']]);
+    sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
+  }
+  var lastRow = sheet.getLastRow();
+  var numCols = sheet.getLastColumn();
+  if (lastRow >= 1 && numCols < 5) {
+    sheet.getRange(1, 4, 1, 5).setValues([['やり取り回数', '顧客ID']]);
+    sheet.getRange(1, 4, 1, 5).setFontWeight('bold');
   }
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss');
-  sheet.appendRow([now, question, answer]);
+  var count = '';
+  if (customerId) {
+    var n = 0;
+    if (lastRow >= 2 && sheet.getLastColumn() >= 5) {
+      var data = sheet.getRange(2, 5, lastRow, 5).getValues();
+      for (var i = 0; i < data.length; i++) {
+        if (String(data[i][0]).trim() === customerId) n++;
+      }
+    }
+    count = n + 1;
+  }
+  sheet.appendRow([now, question, answer, count, customerId || '']);
 }
 
 /**

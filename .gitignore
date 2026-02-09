@@ -40,3 +40,6 @@ dummy2
 *.swo
 *~
 
+
+# Local Netlify folder
+.netlify

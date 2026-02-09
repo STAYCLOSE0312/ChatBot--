@@ -143,6 +143,15 @@ body {
     font-size: 15px;
 }
 
+.message-content a {
+    color: #0066cc;
+    text-decoration: underline;
+}
+
+.message-content a:hover {
+    color: #004499;
+}
+
 /* 一投目のボットメッセージだけ横幅を少し細くする */
 .chat-messages .message.bot-message:first-child .message-content {
     max-width: 55%;
