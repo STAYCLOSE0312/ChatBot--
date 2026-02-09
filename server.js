@@ -1,33 +1,4 @@
-// 環境変数の読み込み（最初に読み込む）
 require('dotenv').config();
-
-// 環境変数の確認（デバッグ用）
-console.log('🔍 環境変数の確認:');
-console.log(`   GOOGLE_SHEETS_SPREADSHEET_ID: ${process.env.GOOGLE_SHEETS_SPREADSHEET_ID || '(未設定)'}`);
-console.log(`   GOOGLE_SERVICE_ACCOUNT_PATH: ${process.env.GOOGLE_SERVICE_ACCOUNT_PATH || '(未設定)'}`);
-console.log(`   GOOGLE_SERVICE_ACCOUNT_JSON: ${process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? '(設定済み)' : '(未設定)'}`);
-console.log(`   GOOGLE_SERVICE_ACCOUNT_JSON_BASE64: ${process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 ? '(設定済み)' : '(未設定)'}`);
-console.log(`   PORT: ${process.env.PORT || '(未設定、デフォルト3000)'}`);
-console.log(`   NODE_ENV: ${process.env.NODE_ENV || '(未設定)'}`);
-console.log('');
-
-// 環境変数の検証
-const missingVars = [];
-if (!process.env.GOOGLE_SHEETS_SPREADSHEET_ID) {
-  missingVars.push('GOOGLE_SHEETS_SPREADSHEET_ID');
-}
-if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 && 
-    !process.env.GOOGLE_SERVICE_ACCOUNT_JSON && 
-    !process.env.GOOGLE_SERVICE_ACCOUNT_PATH) {
-  missingVars.push('GOOGLE_SERVICE_ACCOUNT_JSON_BASE64 または GOOGLE_SERVICE_ACCOUNT_JSON または GOOGLE_SERVICE_ACCOUNT_PATH');
-}
-
-if (missingVars.length > 0) {
-  console.warn('⚠️ 警告: 以下の環境変数が設定されていません:');
-  missingVars.forEach(v => console.warn(`   - ${v}`));
-  console.warn('   サーバーは起動しますが、Google Sheets APIへの接続に失敗する可能性があります。');
-  console.warn('');
-}
 
 const express = require('express');
 const cors = require('cors');

@@ -1,11 +1,35 @@
-// API URLを環境に応じて自動設定
-const API_URL = (() => {
-  // 本番環境（Renderなど）では、同じドメインを使用
-  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `${window.location.origin}/api`;
+// API設定: Netlify では Functions、localhost:3000 は従来の Node API、それ以外は APPS_SCRIPT_URL または /api
+const API_CONFIG = (() => {
+  const origin = window.location.origin;
+  const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  const isNodeServer = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && port === '3000';
+  if (isNodeServer) {
+    return {
+      popular: `${origin}/api/faqs/popular`,
+      chat: `${origin}/api/chat`,
+      method: 'legacy'
+    };
   }
-  // ローカル開発環境
-  return 'http://localhost:3000/api';
+  if (/\.netlify\.app$/.test(window.location.hostname) || window.CHATBOT_USE_NETLIFY) {
+    return {
+      popular: `${origin}/.netlify/functions/popular`,
+      chat: `${origin}/.netlify/functions/chat`,
+      method: 'netlify'
+    };
+  }
+  if (window.APPS_SCRIPT_URL) {
+    const base = window.APPS_SCRIPT_URL.replace(/\?.*$/, '');
+    return {
+      popular: base + (base.indexOf('?') >= 0 ? '&' : '?') + 'action=popular',
+      chat: base,
+      method: 'direct'
+    };
+  }
+  return {
+    popular: `${origin}/.netlify/functions/popular`,
+    chat: `${origin}/.netlify/functions/chat`,
+    method: 'netlify'
+  };
 })();
 
 let chatMessages = [];
@@ -19,23 +43,23 @@ const quickQuestionsButtons = document.getElementById('quickQuestionsButtons');
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
     loadPopularQuestions();
-    
-    // エンターキーで送信
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
     });
-    
-    // 送信ボタン
     sendButton.addEventListener('click', sendMessage);
+    chatMessagesContainer.addEventListener('click', (e) => {
+        const el = e.target.closest('.related-question');
+        if (el) askRelatedQuestion(el.textContent);
+    });
 });
 
 // 代表的な質問を読み込み
 async function loadPopularQuestions() {
     try {
-        const response = await fetch(`${API_URL}/faqs/popular`);
+        const response = await fetch(API_CONFIG.popular);
         
         if (!response.ok) {
             console.error('FAQ取得エラー:', response.status);
@@ -82,7 +106,7 @@ async function sendMessage() {
     const typingId = showTypingIndicator();
     
     try {
-        const response = await fetch(`${API_URL}/chat`, {
+        const response = await fetch(API_CONFIG.chat, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -103,14 +127,15 @@ async function sendMessage() {
         
         const data = await response.json();
         
-        // データの検証
+        if (data && data.error) {
+            addBotMessage('申し訳ございません。' + (data.error || 'エラーが発生しました。'));
+            return;
+        }
         if (!data || !data.answer) {
             console.error('無効なレスポンスデータ:', data);
             addBotMessage('申し訳ございません。サーバーからの応答が不正です。');
             return;
         }
-        
-        // ボットの回答を表示
         addBotMessage(data.answer, data.relatedQuestions || []);
         
     } catch (error) {
@@ -146,9 +171,7 @@ function addBotMessage(text, relatedQuestions = []) {
             <div class="related-questions">
                 <div class="related-questions-title">関連する質問:</div>
                 ${relatedQuestions.map(q => `
-                    <div class="related-question" onclick="askRelatedQuestion('${escapeHtml(q)}')">
-                        ${escapeHtml(q)}
-                    </div>
+                    <div class="related-question">${escapeHtml(q)}</div>
                 `).join('')}
             </div>
         `;
