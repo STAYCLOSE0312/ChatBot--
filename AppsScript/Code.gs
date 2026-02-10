@@ -168,35 +168,50 @@ function searchFAQ(query) {
 
 /**
  * 対応履歴シートに 日時・質問・回答・やり取り回数・顧客ID を1行追加
- * シートがなければ自動作成。顧客IDが空の場合は回数は空欄、顧客IDのみ記録しない。
+ * 「対応履歴」がなければ「シート1」など先頭シートに追記する。5列処理で失敗しても3列で必ず残す。
  */
 function appendHistory(question, answer, customerId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(HISTORY_SHEET_NAME);
   if (!sheet) {
-    sheet = ss.insertSheet(HISTORY_SHEET_NAME);
-    sheet.getRange(1, 1, 1, 5).setValues([['日時', '質問', '回答', 'やり取り回数', '顧客ID']]);
-    sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
-  }
-  var lastRow = sheet.getLastRow();
-  var numCols = sheet.getLastColumn();
-  if (lastRow >= 1 && numCols < 5) {
-    sheet.getRange(1, 4, 1, 5).setValues([['やり取り回数', '顧客ID']]);
-    sheet.getRange(1, 4, 1, 5).setFontWeight('bold');
+    var first = ss.getSheets()[0];
+    var firstVal = first.getLastRow() >= 1 ? (first.getRange(1, 1, 1, 2).getValues()[0] || []) : [];
+    if (firstVal[0] === '日時' || firstVal[0] === '質問' || firstVal[1] === '質問') {
+      sheet = first;
+    } else {
+      sheet = ss.insertSheet(HISTORY_SHEET_NAME);
+      sheet.getRange(1, 1, 1, 5).setValues([['日時', '質問', '回答', 'やり取り回数', '顧客ID']]);
+      sheet.getRange(1, 1, 1, 5).setFontWeight('bold');
+    }
   }
   var now = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy/MM/dd HH:mm:ss');
   var count = '';
-  if (customerId) {
-    var n = 0;
-    if (lastRow >= 2 && sheet.getLastColumn() >= 5) {
-      var data = sheet.getRange(2, 5, lastRow, 5).getValues();
-      for (var i = 0; i < data.length; i++) {
-        if (String(data[i][0]).trim() === customerId) n++;
-      }
+  try {
+    var lastRow = sheet.getLastRow();
+    var numCols = Math.max(sheet.getLastColumn(), 1);
+    if (lastRow >= 1 && numCols < 5) {
+      sheet.getRange(1, 4, 1, 5).setValues([['やり取り回数', '顧客ID']]);
+      sheet.getRange(1, 4, 1, 5).setFontWeight('bold');
+      numCols = 5;
     }
-    count = n + 1;
+    if (customerId && lastRow >= 2 && numCols >= 5) {
+      var data = sheet.getRange(2, 5, lastRow, 5).getValues();
+      var n = 0;
+      for (var i = 0; i < data.length; i++) {
+        if (String(data[i][0] || '').trim() === String(customerId).trim()) n++;
+      }
+      count = n + 1;
+    }
+  } catch (e) {
+    count = '';
   }
-  sheet.appendRow([now, question, answer, count, customerId || '']);
+  try {
+    sheet.appendRow([now, question, answer, count, customerId || '']);
+  } catch (e) {
+    try {
+      sheet.appendRow([now, question, answer]);
+    } catch (e2) {}
+  }
 }
 
 /**
